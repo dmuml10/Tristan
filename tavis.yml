@@ -1,0 +1,28 @@
+language: android
+jdk: oraclejdk7
+android:
+  components:
+    - build-tools-22.0.1
+    - android-22
+    - add-on
+    - extra
+
+script:
+  - ./gradlew assemble
+  - BUCKET=${TRAVIS_REPO_SLUG%/*}
+  - DIR=${TRAVIS_REPO_SLUG##*/}
+  - echo $BUCKET $DIR $TRAVIS_COMMIT $TRAVIS_REPO_SLUG
+
+before_deploy:
+  - mkdir app/build/outputs/apk/$DIR
+  - mv app/build/outputs/apk/app-debug.apk app/build/outputs/apk/$DIR/$TRAVIS_COMMIT.apk
+  - rm app/build/outputs/apk/*.apk
+  
+deploy:
+  provider: s3
+  access_key_id: $ARTIFACTS_KEY
+  secret_access_key: $ARTIFACTS_SECRET
+  bucket: $BUCKET
+  local_dir: app/build/outputs/apk
+  skip_cleanup: true
+  acl: public_read
