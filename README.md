@@ -19,7 +19,7 @@ To set up project for your own Android project follow these steps:
 ### .travis.yml
 
 ##### `script` section
-runs gradle task and initializes `BUCKET` and `DIR` variables.
+runs gradle task and sets `BUCKET` and `DIR` variables.
 For example, if GitHub repo is `gkiko/Popcorn` then `BUCKET=gkiko` and `DIR=Popcorn`.
 These variables will be handy when storing data in S3.
 
@@ -34,14 +34,44 @@ My S3 console says that bucket names can contain only lowercase characters. More
 
 ```
 app/build/outputs/apk/app-debug-unaligned.apk
-app/build/outputs/apk/app-debug.apk
+app/build/outputs/apk/app-debug.apk              // <---
 app/build/outputs/apk/app-release-unaligned.apk
 app/build/outputs/apk/app-release-unsigned.apk
 ```
 
-We are only interested in `app-debug.apk`. Script in `before_deploy` moves the `.apk` in new directory and deletes other files.
+The file we are interested in is `app-debug.apk`. Script in `before_deploy` moves the `.apk` in new directory and deletes other files.
 `app-debug.apk` is renamed with git _commit hash_ and placed under the direcotry maching GitHub project name.
 
 ```
 app/build/outputs/apk/Popcorn/f75cb468aa1dd50d981691b42edf6c562ec3abfe.apk
 ```
+
+##### `deploy` section
+Uploads build artifact to S3. The file is stored in `$BUCKET/$DIR`
+
+```
+gkiko/Popcorn/f75cb468aa1dd50d981691b42edf6c562ec3abfe.apk
+```
+
+### executor.js
+This file is deployed on AWS Lambda.
+
+##### GitHub API
+
+Upon receiving event from S3 we get commit message and link to diff page from GitHub API. Slack message looks like this
+
+> Tristan BOT [7:56 PM]
+> [[7825175](https://github.com/Jilberta/WhatAboutNews/commit/782517571c96de50f550ce7370c4a40fa608ea45)] Giorgi Kikolashvili: ​_add travis status badge_​
+> Download apk [HERE](https://s3-us-west-2.amazonaws.com/jilberta/WhatAboutNews/782517571c96de50f550ce7370c4a40fa608ea45.apk)
+
+Notice on this step
+
+Quering GitHub API is redundant since Slack already provides GitHub integration
+
+##### create S3 public link
+
+Download link for the .apk file is the most essential part. We generate S3 public link in `concatUrl` function. Yes I know, this is ugly and unreliable. We will find better solution asap!
+
+##### post to Slack channel
+
+You should have already done _step 4_. Sends json data to Slack API. _text_ field in the json is formatted with Slack markdown to include hyperlinks.
