@@ -18,36 +18,9 @@ exports.handler = function(event, context) {
     var url = concatUrl(event.Records[0]);
     console.log("The URL is", url);
     
-    var commitMessage = '';
     var commitId = key.substring(key.indexOf("/") + 1, key.indexOf("."));
-    var gitReq = https.request({
-       hostname: "api.github.com",
-       port: 443,
-       headers: {
-         'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.13) Gecko/20080311 Firefox/2.0.0.13'
-       },
-       path: "/repos/gkiko/Popcorn/git/commits/"+commitId, // replace with yours from previous step
-       method: "GET"
-     }, function(res) {
-       console.log("GitHub response status code: " + res.statusCode);
-       var body = '';
-          res.on('data', function(chunk) {
-            body += chunk;
-          });
-          res.on('end', function() {
-            console.log(JSON.parse(body).message);
-            var gitObj = JSON.parse(body);
-            postSlack(context, url, commitId, gitObj.message, gitObj.author.name, gitObj.html_url);
-          });
-     });
-     
-     gitReq.on("error", function(err) {
-         console.log("Git request error: " + JSON.stringify(err));
-     });
-     
-     gitReq.end();
-    
-    // context.succeed();
+    commitId = commitId.substring(0,7);
+    postSlack(context, url, commitId);
 };
 
 function concatUrl(record) {
@@ -58,31 +31,31 @@ function concatUrl(record) {
     return pref + "." + host + "/" + path1 + "/" + path2;
 }
 
-function postSlack(context, url, commitId, message, author, gitUrl) {
+function postSlack(context, url, commitId) {
     var req = https.request({
-       hostname: "hooks.slack.com",
-       port: 443,
-       path: "/services/T0A8AC0EP/B0H1F8TBK/Rr9cSITHEJEwkK2qoYw3ELqS", // replace with yours from previous step
-       method: "POST",
-       headers: {
-         "Content-Type": "application/json"
-       }
-     }, function(res) {
-       console.log("Slack hook response status code: " + res.statusCode);
-       context.succeed();
-     });
+        hostname: "hooks.slack.com",
+        port: 443,
+        path: "/services/T0A8AC0EP/B0H1F8TBK/Rr9cSITHEJEwkK2qoYw3ELqS", // replace with yours from previous step
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        }
+    }, function(res) {
+        console.log("Slack hook response status code: " + res.statusCode);
+        context.succeed();
+    });
  
-     req.on("error", function(err) {
-         console.log("Slack request error: " + JSON.stringify(err));
-         context.fail(err.message);
-     });
+    req.on("error", function(err) {
+        console.log("Slack request error: " + JSON.stringify(err));
+        context.fail(err.message);
+    });
  
-    pretty = "[<"+gitUrl+"|"+commitId.substring(0,7)+">] "+author+": _"+message+"_\nDownload apk <"+url+"|HERE>";
+    pretty = "Download apk <"+url+"|"+commitId+">";
     req.write(JSON.stringify({
         text: pretty,
         username: "Tristan",
         icon_url: "https://simplyian.com/assets/travis.png"
     }));
  
-     req.end();
+    req.end();
 }
