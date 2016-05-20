@@ -56,18 +56,6 @@ gkiko/Popcorn/f75cb468aa1dd50d981691b42edf6c562ec3abfe.apk
 ### executor.js
 This file is deployed on AWS Lambda.
 
-##### GitHub API
-
-Upon receiving event from S3 we get commit message and link to diff page from GitHub API. Slack message looks like this
-
-> Tristan BOT [7:56 PM]
-> [[7825175](https://github.com/Jilberta/WhatAboutNews/commit/782517571c96de50f550ce7370c4a40fa608ea45)] Giorgi Kikolashvili: ​_add travis status badge_​
-> Download apk [HERE](https://s3-us-west-2.amazonaws.com/jilberta/WhatAboutNews/782517571c96de50f550ce7370c4a40fa608ea45.apk)
-
-Notice on this step
-
-Quering GitHub API is redundant since Slack already provides GitHub integration
-
 ##### create S3 public link
 
 Download link for the .apk file is the most essential part. We generate S3 public link in `concatUrl` function. Yes I know, this is ugly and unreliable. We will find better solution asap!
